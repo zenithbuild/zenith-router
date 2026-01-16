@@ -1,54 +1,54 @@
 {
-    "name": "@zenithbuild/router",
-    "version": "0.1.2",
-    "description": "File-based SPA router for Zenith framework with deterministic, compile-time route resolution",
-    "license": "MIT",
-    "type": "module",
-    "main": "./src/index.ts",
-    "files": [
-        "src",
-        "dist",
-        "tsconfig.json"
-    ],
-    "exports": {
-        ".": "./src/index.ts",
-        "./manifest": "./src/manifest.ts",
-        "./runtime": "./src/runtime.ts",
-        "./navigation": "./src/navigation/index.ts",
-        "./types": "./src/types.ts"
-    },
-    "keywords": [
-        "zenith",
-        "router",
-        "spa",
-        "file-based-routing",
-        "compile-time"
-    ],
-    "author": "Zenith Team",
-    "repository": {
-        "type": "git",
-        "url": "git@github.com:zenithbuild/zenith-router.git"
-    },
-    "scripts": {
-        "format": "prettier --write \"**/*.ts\"",
-        "format:check": "prettier --check \"**/*.ts\"",
-        "typecheck": "tsc --noEmit",
-        "release": "bun run scripts/release.ts",
-        "release:dry": "bun run scripts/release.ts --dry-run",
-        "release:patch": "bun run scripts/release.ts --bump=patch",
-        "release:minor": "bun run scripts/release.ts --bump=minor",
-        "release:major": "bun run scripts/release.ts --bump=major"
-    },
-    "publishConfig": {
-        "access": "public"
-    },
-    "private": false,
-    "devDependencies": {
-        "@types/bun": "latest",
-        "@types/node": "latest",
-        "prettier": "^3.7.4"
-    },
-    "peerDependencies": {
-        "typescript": "^5"
-    }
+  "name": "@zenithbuild/router",
+  "version": "0.1.3",
+  "description": "File-based SPA router for Zenith framework with deterministic, compile-time route resolution",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.ts",
+  "files": [
+    "src",
+    "dist",
+    "tsconfig.json"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./manifest": "./src/manifest.ts",
+    "./runtime": "./src/runtime.ts",
+    "./navigation": "./src/navigation/index.ts",
+    "./types": "./src/types.ts"
+  },
+  "keywords": [
+    "zenith",
+    "router",
+    "spa",
+    "file-based-routing",
+    "compile-time"
+  ],
+  "author": "Zenith Team",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:zenithbuild/zenith-router.git"
+  },
+  "scripts": {
+    "format": "prettier --write \"**/*.ts\"",
+    "format:check": "prettier --check \"**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "release": "bun run scripts/release.ts",
+    "release:dry": "bun run scripts/release.ts --dry-run",
+    "release:patch": "bun run scripts/release.ts --bump=patch",
+    "release:minor": "bun run scripts/release.ts --bump=minor",
+    "release:major": "bun run scripts/release.ts --bump=major"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "private": false,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "latest",
+    "prettier": "^3.7.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
 }
