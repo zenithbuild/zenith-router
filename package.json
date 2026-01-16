@@ -32,7 +32,15 @@
     "scripts": {
         "format": "prettier --write \"**/*.ts\"",
         "format:check": "prettier --check \"**/*.ts\"",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit",
+        "release": "bun run scripts/release.ts",
+        "release:dry": "bun run scripts/release.ts --dry-run",
+        "release:patch": "bun run scripts/release.ts --bump=patch",
+        "release:minor": "bun run scripts/release.ts --bump=minor",
+        "release:major": "bun run scripts/release.ts --bump=major"
+    },
+    "publishConfig": {
+        "access": "public"
     },
     "private": false,
     "devDependencies": {
