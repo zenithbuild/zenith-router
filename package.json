@@ -35,7 +35,7 @@
     "author": "Zenith Team",
     "repository": {
         "type": "git",
-        "url": "git@github.com:zenithbuild/zenith-router.git"
+        "url": "git+ssh://git@github.com/zenithbuild/zenith-router.git"
     },
     "scripts": {
         "format": "prettier --write \"**/*.ts\"",
