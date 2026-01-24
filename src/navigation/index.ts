@@ -3,11 +3,11 @@
  * 
  * Provides SPA navigation utilities and the ZenLink API.
  * 
- * @package @zenith/router
+ * @package @zenithbuild/router
  * 
  * @example
  * ```ts
- * import { navigate, isActive, prefetch, zenLink } from '@zenith/router/navigation'
+ * import { navigate, isActive, prefetch, zenLink } from '@zenithbuild/router/navigation'
  * 
  * // Programmatic navigation
  * navigate('/about')

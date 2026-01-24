@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@zenith/router",
+      "name": "@zenithbuild/router",
       "devDependencies": {
         "@napi-rs/cli": "^2.18.4",
         "@types/bun": "latest",
