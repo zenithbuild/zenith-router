@@ -36,3 +36,12 @@ export interface RouteManifest {
   generatedAt: number
 }
 export declare function routerBridge(): string
+declare const native: {
+  generateRouteManifestNative(pagesDir: string): Array<RouteRecord>
+  renderRouteNative(inputJson: string): string
+  resolveRouteNative(path: string, routes: Array<RouteRecord>): RouteState | null
+  generateRuntimeRouterNative(): string
+  routerBridge(): string
+}
+
+export default native;
