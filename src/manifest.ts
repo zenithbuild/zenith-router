@@ -1,29 +1,22 @@
-/**
- * Zenith Route Manifest Generator
- * 
- * Scans pages/ directory at build time and generates a route manifest
- * with proper scoring for deterministic route matching.
- * 
- * @package @zenithbuild/router
- */
-
 import fs from "fs"
 import path from "path"
+import native from "../index.js"
 import {
     type RouteDefinition,
     type ParsedSegment,
     SegmentType
 } from "./types"
 
+const { generateRouteManifestNative } = native
+
 /**
  * Scoring constants for route ranking
- * Higher scores = higher priority
  */
 const SEGMENT_SCORES = {
-    [SegmentType.STATIC]: 10,
-    [SegmentType.DYNAMIC]: 5,
-    [SegmentType.CATCH_ALL]: 1,
-    [SegmentType.OPTIONAL_CATCH_ALL]: 0
+    [SegmentType.Static]: 10,
+    [SegmentType.Dynamic]: 5,
+    [SegmentType.CatchAll]: 1,
+    [SegmentType.OptionalCatchAll]: 0
 } as const
 
 /**
@@ -54,143 +47,85 @@ export function discoverPages(pagesDir: string): string[] {
 
 /**
  * Convert a file path to a route path
- * 
- * Examples:
- *   pages/index.zen       → /
- *   pages/about.zen       → /about
- *   pages/blog/index.zen  → /blog
- *   pages/blog/[id].zen   → /blog/:id
- *   pages/posts/[...slug].zen → /posts/*slug
- *   pages/[[...all]].zen  → /*all (optional)
  */
 export function filePathToRoutePath(filePath: string, pagesDir: string): string {
-    // Get relative path from pages directory
     const relativePath = path.relative(pagesDir, filePath)
-
-    // Remove .zen extension
     const withoutExt = relativePath.replace(/\.zen$/, "")
-
-    // Split into segments
-    const segments = withoutExt.split(path.sep)
-
-    // Transform segments
+    const segmentsList = withoutExt.split(path.sep)
     const routeSegments: string[] = []
 
-    for (const segment of segments) {
-        // Handle index files (they represent the directory root)
-        if (segment === "index") {
-            continue
-        }
+    for (const segment of segmentsList) {
+        if (segment === "index") continue
 
-        // Handle optional catch-all: [[...param]]
         const optionalCatchAllMatch = segment.match(/^\[\[\.\.\.(\w+)\]\]$/)
         if (optionalCatchAllMatch) {
             routeSegments.push(`*${optionalCatchAllMatch[1]}?`)
             continue
         }
 
-        // Handle required catch-all: [...param]
         const catchAllMatch = segment.match(/^\[\.\.\.(\w+)\]$/)
         if (catchAllMatch) {
             routeSegments.push(`*${catchAllMatch[1]}`)
             continue
         }
 
-        // Handle dynamic segment: [param]
         const dynamicMatch = segment.match(/^\[(\w+)\]$/)
         if (dynamicMatch) {
             routeSegments.push(`:${dynamicMatch[1]}`)
             continue
         }
 
-        // Static segment
         routeSegments.push(segment)
     }
 
-    // Build route path
     const routePath = "/" + routeSegments.join("/")
-
-    // Normalize trailing slashes
     return routePath === "/" ? "/" : routePath.replace(/\/$/, "")
 }
 
 /**
- * Parse a route path into segments with type information
+ * Parse a route path into segments
  */
 export function parseRouteSegments(routePath: string): ParsedSegment[] {
-    if (routePath === "/") {
-        return []
-    }
+    if (routePath === "/") return []
 
-    const segments = routePath.slice(1).split("/")
+    const segmentsList = routePath.slice(1).split("/")
     const parsed: ParsedSegment[] = []
 
-    for (const segment of segments) {
-        // Optional catch-all: *param?
+    for (const segment of segmentsList) {
         if (segment.startsWith("*") && segment.endsWith("?")) {
-            parsed.push({
-                type: SegmentType.OPTIONAL_CATCH_ALL,
-                paramName: segment.slice(1, -1),
-                raw: segment
-            })
+            parsed.push({ segmentType: SegmentType.OptionalCatchAll, paramName: segment.slice(1, -1), raw: segment })
             continue
         }
-
-        // Required catch-all: *param
         if (segment.startsWith("*")) {
-            parsed.push({
-                type: SegmentType.CATCH_ALL,
-                paramName: segment.slice(1),
-                raw: segment
-            })
+            parsed.push({ segmentType: SegmentType.CatchAll, paramName: segment.slice(1), raw: segment })
             continue
         }
-
-        // Dynamic: :param
         if (segment.startsWith(":")) {
-            parsed.push({
-                type: SegmentType.DYNAMIC,
-                paramName: segment.slice(1),
-                raw: segment
-            })
+            parsed.push({ segmentType: SegmentType.Dynamic, paramName: segment.slice(1), raw: segment })
             continue
         }
-
-        // Static
-        parsed.push({
-            type: SegmentType.STATIC,
-            raw: segment
-        })
+        parsed.push({ segmentType: SegmentType.Static, raw: segment })
     }
 
     return parsed
 }
 
 /**
- * Calculate route score based on segments
- * Higher scores = higher priority for matching
+ * Calculate route score
  */
 export function calculateRouteScore(segments: ParsedSegment[]): number {
-    if (segments.length === 0) {
-        // Root route gets a high score
-        return 100
-    }
-
+    if (segments.length === 0) return 100
     let score = 0
-
     for (const segment of segments) {
-        score += SEGMENT_SCORES[segment.type]
+        score += SEGMENT_SCORES[segment.segmentType]
     }
-
-    // Bonus for having more static segments (specificity)
-    const staticCount = segments.filter(s => s.type === SegmentType.STATIC).length
+    const staticCount = segments.filter(s => s.segmentType === SegmentType.Static).length
     score += staticCount * 2
-
     return score
 }
 
 /**
- * Extract parameter names from parsed segments
+ * Extract parameter names
  */
 export function extractParamNames(segments: ParsedSegment[]): string[] {
     return segments
@@ -200,102 +135,66 @@ export function extractParamNames(segments: ParsedSegment[]): string[] {
 
 /**
  * Convert route path to regex pattern
- * 
- * Examples:
- *   /about         → /^\/about\/?$/
- *   /blog/:id      → /^\/blog\/([^/]+)\/?$/
- *   /posts/*slug   → /^\/posts\/(.+)\/?$/
- *   /              → /^\/$/
- *   /*all?         → /^(?:\/(.*))?$/  (optional catch-all)
  */
 export function routePathToRegex(routePath: string): RegExp {
-    if (routePath === "/") {
-        return /^\/$/
-    }
+    if (routePath === "/") return /^\/$/
 
-    const segments = routePath.slice(1).split("/")
+    const segmentsList = routePath.slice(1).split("/")
     const regexParts: string[] = []
 
-    for (let i = 0; i < segments.length; i++) {
-        const segment = segments[i]
+    for (let i = 0; i < segmentsList.length; i++) {
+        const segment = segmentsList[i]
         if (!segment) continue
 
-        // Optional catch-all: *param?
         if (segment.startsWith("*") && segment.endsWith("?")) {
-            // Optional catch-all - matches zero or more path segments
-            // Should only be at the end
             regexParts.push("(?:\\/(.*))?")
             continue
         }
-
-        // Required catch-all: *param
         if (segment.startsWith("*")) {
-            // Required catch-all - matches one or more path segments
             regexParts.push("\\/(.+)")
             continue
         }
-
-        // Dynamic: :param
         if (segment.startsWith(":")) {
             regexParts.push("\\/([^/]+)")
             continue
         }
-
-        // Static segment - escape special regex characters
         const escaped = segment.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
         regexParts.push(`\\/${escaped}`)
     }
 
-    // Build final regex with optional trailing slash
-    const pattern = `^${regexParts.join("")}\\/?$`
-    return new RegExp(pattern)
+    return new RegExp(`^${regexParts.join("")}\\/?$`)
 }
 
 /**
  * Generate a route definition from a file path
  */
-export function generateRouteDefinition(
-    filePath: string,
-    pagesDir: string
-): RouteDefinition {
+export function generateRouteDefinition(filePath: string, pagesDir: string): RouteDefinition {
     const routePath = filePathToRoutePath(filePath, pagesDir)
     const segments = parseRouteSegments(routePath)
     const paramNames = extractParamNames(segments)
     const score = calculateRouteScore(segments)
 
+    // Note: RouteDefinition extends RouteRecord, which no longer has segments
     return {
         path: routePath,
-        segments,
         paramNames,
         score,
-        filePath
+        filePath,
+        regex: routePathToRegex(routePath)
     }
 }
 
-/**
- * Generate route manifest from pages directory
- * Returns route definitions sorted by score (highest first)
- */
 export function generateRouteManifest(pagesDir: string): RouteDefinition[] {
+    // Optional: use native generator if available, but for now we keep the TS one for build-time safety
     const pages = discoverPages(pagesDir)
-
-    const definitions = pages.map(filePath =>
-        generateRouteDefinition(filePath, pagesDir)
-    )
-
-    // Sort by score descending (highest priority first)
+    const definitions = pages.map(filePath => generateRouteDefinition(filePath, pagesDir))
     definitions.sort((a, b) => b.score - a.score)
-
     return definitions
 }
 
-/**
- * Generate the route manifest as JavaScript code for runtime
- */
 export function generateRouteManifestCode(definitions: RouteDefinition[]): string {
     const routeEntries = definitions.map(def => {
         const regex = routePathToRegex(def.path)
-
         return `  {
     path: ${JSON.stringify(def.path)},
     regex: ${regex.toString()},
@@ -305,11 +204,5 @@ export function generateRouteManifestCode(definitions: RouteDefinition[]): strin
   }`
     })
 
-    return `// Auto-generated route manifest
-// Do not edit directly
-
-export const routeManifest = [
-${routeEntries.join(",\n")}
-];
-`
+    return `// Auto-generated route manifest\n// Do not edit directly\n\nexport const routeManifest = [\n${routeEntries.join(",\n")}\n];\n`
 }

@@ -1,4 +1,4 @@
-# @zenithbuild/router
+# @zenith/router
 
 File-based SPA router for Zenith framework with **deterministic, compile-time route resolution**.
 
@@ -14,7 +14,7 @@ File-based SPA router for Zenith framework with **deterministic, compile-time ro
 ## Installation
 
 ```bash
-bun add @zenithbuild/router
+bun add @zenith/router
 ```
 
 ## Usage
@@ -22,7 +22,7 @@ bun add @zenithbuild/router
 ### Programmatic Navigation
 
 ```ts
-import { navigate, prefetch, isActive, getRoute } from '@zenithbuild/router'
+import { navigate, prefetch, isActive, getRoute } from '@zenith/router'
 
 // Navigate to a route
 navigate('/about')
@@ -59,7 +59,7 @@ const { path, params, query } = getRoute()
 The router generates a route manifest at compile time:
 
 ```ts
-import { generateRouteManifest, discoverPages } from '@zenithbuild/router/manifest'
+import { generateRouteManifest, discoverPages } from '@zenith/router/manifest'
 
 const pagesDir = './src/pages'
 const manifest = generateRouteManifest(pagesDir)
@@ -85,7 +85,7 @@ const manifest = generateRouteManifest(pagesDir)
 ## Architecture
 
 ```
-@zenithbuild/router
+@zenith/router
 ├── src/
 │   ├── index.ts          # Main exports
 │   ├── types.ts          # Core types

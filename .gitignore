@@ -54,3 +54,8 @@ tickets/
 dist/
 test-dist/
 app/dist/
+target/
+dist/
+node_modules/
+.DS_Store
+*.node

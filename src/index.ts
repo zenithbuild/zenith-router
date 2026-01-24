@@ -1,5 +1,5 @@
 /**
- * @zenithbuild/router
+ * @zenith/router
  * 
  * File-based SPA router for Zenith framework.
  * Includes routing, navigation, and ZenLink components.
@@ -14,7 +14,7 @@
  * 
  * @example
  * ```ts
- * import { navigate, isActive, prefetch } from '@zenithbuild/router'
+ * import { navigate, isActive, prefetch } from '@zenith/router'
  * 
  * // Navigate programmatically
  * navigate('/about')
@@ -28,7 +28,7 @@
  * @example
  * ```ts
  * // Build-time manifest generation
- * import { generateRouteManifest, discoverPages } from '@zenithbuild/router/manifest'
+ * import { generateRouteManifest, discoverPages } from '@zenith/router/manifest'
  * 
  * const manifest = generateRouteManifest('./src/pages')
  * ```
@@ -45,13 +45,6 @@ export * from "./types"
 // ============================================
 
 export {
-    discoverPages,
-    filePathToRoutePath,
-    parseRouteSegments,
-    calculateRouteScore,
-    extractParamNames,
-    routePathToRegex,
-    generateRouteDefinition,
     generateRouteManifest,
     generateRouteManifestCode
 } from "./manifest"
@@ -66,8 +59,6 @@ export {
     navigate,
     getRoute,
     onRouteChange,
-    beforeEach,
-    afterEach,
     isActive,
     prefetch,
     isPrefetched,

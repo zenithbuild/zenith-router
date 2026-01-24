@@ -4,11 +4,11 @@
  * Provides programmatic navigation and ZenLink utilities.
  * This module can be imported in `.zen` files or TypeScript.
  * 
- * @package @zenithbuild/router
+ * @package @zenith/router
  * 
  * @example
  * ```ts
- * import { navigate, zenLink, isActive } from '@zenithbuild/router'
+ * import { navigate, zenLink, isActive } from '@zenith/router'
  * 
  * // Programmatic navigation
  * navigate('/about')
