@@ -140,6 +140,25 @@ export async function navigate(to: string, options: NavigateOptions = {}): Promi
 }
 
 export function getRoute(): RouteState { return { ...currentRoute } }
+
+/**
+ * zenRoute() - Zenith Law: Environment Resolution
+ * 
+ * Canonical primitive for resolving the current route environment.
+ * Must be resolved once and execute before state initialization.
+ */
+export function zenRoute(): { path: string; slugs: string[] } {
+  const path = typeof window !== 'undefined' ? window.location.pathname : currentRoute.path;
+  return {
+    path,
+    slugs: getSlugs(path)
+  };
+}
+
+function getSlugs(path: string): string[] {
+  return path.split('/').filter(Boolean);
+}
+
 export function onRouteChange(listener: RouteListener): () => void {
   routeListeners.add(listener)
   return () => { routeListeners.delete(listener) }

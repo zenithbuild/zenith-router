@@ -62,7 +62,8 @@ export {
     isActive,
     prefetch,
     isPrefetched,
-    generateRuntimeRouterCode
+    generateRuntimeRouterCode,
+    zenRoute
 } from "./runtime"
 
 // ============================================
