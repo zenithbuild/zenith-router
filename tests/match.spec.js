@@ -1,6 +1,11 @@
 // ---------------------------------------------------------------------------
 // match.spec.js — Path matching tests
 // ---------------------------------------------------------------------------
+// ROUTER_CONTRACT.md invariants:
+// - #1 Deterministic first-match-wins
+// - #2 Params are strings, no coercion
+// - #3 No regex/wildcards/optional segments
+// ---------------------------------------------------------------------------
 
 import { matchPath, matchRoute } from '../src/match.js';
 
@@ -71,6 +76,27 @@ describe('matchPath', () => {
         const result = matchPath('//about//', '/about');
         expect(result.matched).toBe(true);
     });
+
+    test('rejects repeated param names within a single path pattern', () => {
+        const result = matchPath('/users/:id/posts/:id', '/users/7/posts/8');
+        expect(result.matched).toBe(false);
+        expect(result.params).toEqual({});
+    });
+
+    test('does not support wildcard segments', () => {
+        const result = matchPath('/docs/*', '/docs/getting-started');
+        expect(result.matched).toBe(false);
+    });
+
+    test('does not support optional segments', () => {
+        const result = matchPath('/users/:id?', '/users/42');
+        expect(result.matched).toBe(false);
+    });
+
+    test('does not treat regex-style segments specially', () => {
+        const result = matchPath('/items/(\\d+)', '/items/123');
+        expect(result.matched).toBe(false);
+    });
 });
 
 describe('matchRoute', () => {
@@ -134,5 +160,46 @@ describe('matchRoute', () => {
         expect(result).not.toBeNull();
         expect(result.route.path).toBe('/a/:x');
         expect(result.params).toEqual({ x: '1' });
+    });
+
+    test('overlapping static and dynamic routes favor route order', () => {
+        const ordered = [
+            { path: '/users/new', load: () => { } },
+            { path: '/users/:id', load: () => { } }
+        ];
+        const resultA = matchRoute(ordered, '/users/new');
+        expect(resultA.route.path).toBe('/users/new');
+        expect(resultA.params).toEqual({});
+
+        const reversed = [
+            { path: '/users/:id', load: () => { } },
+            { path: '/users/new', load: () => { } }
+        ];
+        const resultB = matchRoute(reversed, '/users/new');
+        expect(resultB.route.path).toBe('/users/:id');
+        expect(resultB.params).toEqual({ id: 'new' });
+    });
+
+    test('prefers specific static route when listed before dynamic', () => {
+        const routes = [
+            { path: '/posts/new', load: () => { } },
+            { path: '/posts/:id', load: () => { } }
+        ];
+
+        const staticResult = matchRoute(routes, '/posts/new');
+        const dynamicResult = matchRoute(routes, '/posts/10');
+
+        expect(staticResult.route.path).toBe('/posts/new');
+        expect(staticResult.params).toEqual({});
+        expect(dynamicResult.route.path).toBe('/posts/:id');
+        expect(dynamicResult.params).toEqual({ id: '10' });
+    });
+
+    test('route with repeated param names never matches', () => {
+        const routes = [
+            { path: '/x/:id/:id', load: () => { } }
+        ];
+        const result = matchRoute(routes, '/x/1/2');
+        expect(result).toBeNull();
     });
 });

@@ -36,6 +36,7 @@ export function matchPath(routePath, pathname) {
     }
 
     const params = {};
+    const seenParamNames = new Set();
 
     for (let i = 0; i < routeSegments.length; i++) {
         const routeSeg = routeSegments[i];
@@ -44,6 +45,13 @@ export function matchPath(routePath, pathname) {
         if (routeSeg.startsWith(':')) {
             // Dynamic param — extract value as string
             const paramName = routeSeg.slice(1);
+            if (!_isValidParamName(paramName)) {
+                return { matched: false, params: {} };
+            }
+            if (seenParamNames.has(paramName)) {
+                return { matched: false, params: {} };
+            }
+            seenParamNames.add(paramName);
             params[paramName] = pathSeg;
         } else if (routeSeg !== pathSeg) {
             // Literal mismatch
@@ -83,4 +91,19 @@ export function matchRoute(routes, pathname) {
  */
 function _splitPath(path) {
     return path.split('/').filter(Boolean);
+}
+
+/**
+ * Validate a dynamic segment param name.
+ *
+ * V0 constraints:
+ * - ASCII identifier style only
+ * - no optional marker '?'
+ * - no wildcard or regex syntax
+ *
+ * @param {string} name
+ * @returns {boolean}
+ */
+function _isValidParamName(name) {
+    return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name);
 }

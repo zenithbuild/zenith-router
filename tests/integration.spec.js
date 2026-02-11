@@ -1,14 +1,20 @@
 // ---------------------------------------------------------------------------
 // integration.spec.js — Full router lifecycle tests
 // ---------------------------------------------------------------------------
+// ROUTER_CONTRACT.md invariants:
+// - #1 Deterministic matching
+// - #6 Mount/unmount delegated to runtime cleanup/mount
+// - #7 History + popstate integration
+// ---------------------------------------------------------------------------
 
 import { createRouter } from '../src/router.js';
 import { navigate, getCurrentPath } from '../src/navigate.js';
-import { onRouteChange, _clearSubscribers } from '../src/events.js';
+import { onRouteChange, _clearSubscribers, _getSubscriberCount } from '../src/events.js';
 import * as routerApi from '../src/index.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { jest } from '@jest/globals';
 
 describe('Integration: createRouter + lifecycle', () => {
     let container;
@@ -220,6 +226,54 @@ describe('Integration: createRouter + lifecycle', () => {
         expect(mounted[9].__html).toBe('<p>9</p>');
 
         router.destroy();
+    });
+
+    test('mount/unmount lifecycle stress: 100 cycles reset container and avoid leaks', async () => {
+        const addSpy = jest.spyOn(window, 'addEventListener');
+        const removeSpy = jest.spyOn(window, 'removeEventListener');
+
+        const routes = [
+            { path: '/a', load: async () => ({ __html: '<h1>A</h1>' }) },
+            { path: '/b', load: async () => ({ __html: '<h1>B</h1>' }) }
+        ];
+
+        const stressMount = (el, mod) => {
+            mounted.push(mod);
+            el.innerHTML = mod.__html || '';
+        };
+        const stressCleanup = () => {
+            cleaned++;
+            container.innerHTML = '';
+        };
+
+        for (let i = 0; i < 100; i++) {
+            history.replaceState({}, '', '/a');
+            const router = createRouter({
+                routes,
+                container,
+                mount: stressMount,
+                cleanup: stressCleanup
+            });
+
+            await router.start();
+            expect(container.innerHTML).toBe('<h1>A</h1>');
+
+            await navigate('/b');
+            expect(container.innerHTML).toBe('<h1>B</h1>');
+
+            router.destroy();
+            container.innerHTML = '';
+            expect(container.innerHTML).toBe('');
+            expect(_getSubscriberCount()).toBe(0);
+        }
+
+        const popAdds = addSpy.mock.calls.filter(([type]) => type === 'popstate').length;
+        const popRemoves = removeSpy.mock.calls.filter(([type]) => type === 'popstate').length;
+        expect(popAdds).toBe(popRemoves);
+        expect(cleaned).toBeGreaterThanOrEqual(100);
+
+        addSpy.mockRestore();
+        removeSpy.mockRestore();
     });
 });
 

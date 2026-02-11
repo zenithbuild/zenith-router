@@ -1,8 +1,13 @@
 // ---------------------------------------------------------------------------
 // history.spec.js — History layer tests
 // ---------------------------------------------------------------------------
+// ROUTER_CONTRACT.md invariants:
+// - #7 History API integration via pushState/popstate
+// - Synchronous behavior (no batching/scheduler)
+// ---------------------------------------------------------------------------
 
 import { push, replace, listen, current } from '../src/history.js';
+import { jest } from '@jest/globals';
 
 describe('History Layer', () => {
     test('push updates pathname', () => {
@@ -69,5 +74,56 @@ describe('History Layer', () => {
         expect(callsB.length).toBe(2);
 
         unlistenB();
+    });
+
+    test('popstate listener dispatch is synchronous in the same tick', () => {
+        const order = [];
+        const unlisten = listen(() => {
+            order.push('listener');
+        });
+
+        order.push('before-dispatch');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        order.push('after-dispatch');
+
+        expect(order).toEqual(['before-dispatch', 'listener', 'after-dispatch']);
+        unlisten();
+    });
+
+    test('pushState + popstate bridge has no deferred scheduler behavior', async () => {
+        const calls = [];
+        const unlisten = listen((path) => calls.push(path));
+
+        push('/sync-check');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        expect(calls).toEqual(['/sync-check']);
+
+        await Promise.resolve();
+        expect(calls).toEqual(['/sync-check']);
+
+        unlisten();
+    });
+
+    test('global popstate listener is attached once and removed when empty', () => {
+        const addSpy = jest.spyOn(window, 'addEventListener');
+        const removeSpy = jest.spyOn(window, 'removeEventListener');
+
+        const unlistenA = listen(() => { });
+        const unlistenB = listen(() => { });
+
+        // Only one global popstate hook should be attached.
+        const popstateAdds = addSpy.mock.calls.filter(([type]) => type === 'popstate');
+        expect(popstateAdds.length).toBe(1);
+
+        unlistenA();
+        const popstateRemovesBeforeLast = removeSpy.mock.calls.filter(([type]) => type === 'popstate');
+        expect(popstateRemovesBeforeLast.length).toBe(0);
+
+        unlistenB();
+        const popstateRemoves = removeSpy.mock.calls.filter(([type]) => type === 'popstate');
+        expect(popstateRemoves.length).toBe(1);
+
+        addSpy.mockRestore();
+        removeSpy.mockRestore();
     });
 });
