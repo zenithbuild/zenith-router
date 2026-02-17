@@ -237,6 +237,12 @@ describe('Contract Guardrails', () => {
         ]);
     });
 
+    test('template subpath exports renderRouterModule only', async () => {
+        const templateApi = await import('@zenithbuild/router/template');
+        expect(Object.keys(templateApi).sort()).toEqual(['renderRouterModule']);
+        expect(typeof templateApi.renderRouterModule).toBe('function');
+    });
+
     test('router source does not use forbidden execution primitives', () => {
         const __filename = fileURLToPath(import.meta.url);
         const __dirname = path.dirname(__filename);
